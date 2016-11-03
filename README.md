@@ -1,1 +1,2 @@
-# science_cloud
+# General repository for the Danish Science Cloud
+
