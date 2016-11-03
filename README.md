@@ -1,5 +1,3 @@
-# General repository for the Danish Science Cloud
-
 ## The data service
 
 - built on ownCloud/Nextcloud
