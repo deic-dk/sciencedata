@@ -16,6 +16,12 @@
 #
 #        dav.sh [[-u user] -p password -f -v] https://my.server/some/directory/
 #
+# Options:
+#
+#        -f: overwrite existing files
+#
+#        -v: be verbose
+#
 # Dependencies: curl, xmllint
 #
 
