@@ -16,7 +16,7 @@
 #
 #        dav.sh [[-u user] -p password -f -v] https://my.server/some/directory/
 #
-# Options:
+# Options
 #
 #        -f: overwrite existing files
 #
