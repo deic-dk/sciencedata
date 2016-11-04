@@ -7,12 +7,12 @@
 
 The core apps are:
 
-- [user_saml](#deic-dk/user_saml)
-- chooser
-- files_sharding
-- user_group_admin
-- files_accounting
-- user_notification
+- [user_saml](https://github.com/deic-dk/user_saml)
+- [chooser](https://github.com/deic-dk/chooser)
+- [files_sharding](https://github.com/deic-dk/files_sharding)
+- [user_group_admin](https://github.com/deic-dk/user_group_admin)
+- [files_accounting](https://github.com/deic-dk/files_accounting)
+- [user_notification](https://github.com/deic-dk/user_notification)
 
 The theme is:
 
