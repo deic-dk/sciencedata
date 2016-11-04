@@ -7,7 +7,7 @@
 
 The core apps are:
 
-- [user_saml](deic-dk/user_saml)
+- [user_saml](#deic-dk/user_saml)
 - chooser
 - files_sharding
 - user_group_admin
