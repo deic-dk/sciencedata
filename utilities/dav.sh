@@ -6,15 +6,15 @@
 # Usage:
 #        Uploading:
 #
-#        dav.sh [[-u user] -p password -f -v] /some/local/file_or_dir https://my.server/some/directory/
+#        dav.sh [-u user [-p password]] [-c certificate -k key] [-f] [-v] /some/local/file_or_dir https://my.server/some/directory/
 #
 #        Downloading:
 #
-#        dav.sh [[-u user] -p password -f -v] https://my.server/some/directory/file_or_dir /some/local/dir/
+#        dav.sh [[-u user] [-p password]] [-c certificate -k key] [-f] [-v] https://my.server/some/directory/file_or_dir /some/local/dir/
 #
 #        Listing:
 #
-#        dav.sh [[-u user] -p password -f -v] https://my.server/some/directory/
+#        dav.sh [-u user [-p password] [-c certificate -k key] [-f] [-v] https://my.server/some/directory/
 #
 # Options
 #
