@@ -27,13 +27,19 @@
 
 MAX_RUNNING_TRANSFERS=10
 
-while getopts "u:p:fv" flag; do
+while getopts "u:p:c:p:fv" flag; do
 	case "$flag" in
 		u)
 			user=$OPTARG
 			;;
 		p)
 			pass=$OPTARG
+			;;
+		c)
+			cert=$OPTARG
+			;;
+		k)
+			key=$OPTARG
 			;;
 		f)
 			force="yes"
@@ -77,13 +83,22 @@ if [[ ! -z "$arg2" ]]; then
 fi
 
 if [ -z "$url" ]; then
-	echo "Usage: dav.sh [[-u user] -p password] source destination" >&2
+	echo "Usage: dav.sh [-u user [-p password]] [-c certificate -k key] source destination" >&2
 	exit 1
 fi
 
 user_pass=""
 if [ "$user" != "" ]; then
 	user_pass="--user $user:$pass"
+fi
+
+cert_key=""
+if [ "$cert" != "" ]; then
+	if [ "$key" = "" ]; then
+		echo "Usage: dav.sh [-u user [-p password]] [-c certificate -k key] source destination" >&2
+		exit 1
+	fi
+	cert_key="--cert $cert --key $key"
 fi
 
 ### From http://mohan43u.wordpress.com/?s=url+decoding
@@ -108,7 +123,8 @@ function davls(){
 	
 	local encoded_path=`urlencode "$path"`
 
-	curl -k -L --request PROPFIND --header "Depth: 1" $user_pass "${base}$encoded_path" 2>/dev/null | \
+	curl -k -L --request PROPFIND --header "Depth: 1" $user_pass $cert_key \
+	"${base}$encoded_path" 2>/dev/null | \
 	xmllint --format - 2>/dev/null | grep href | sed -r 's|^ *||' | \
 	sed -r 's|<d:href>(.*)</d:href>|\1|' | sed -r "s|^/$encoded_path/*||" | \
 	grep -v '^\./$' | grep -v '^$' |
@@ -137,8 +153,10 @@ function davrls(){
 		local exclude=`echo "$exclude" | sed -r 's|(.*)/([^/]*)$|\1|g'`
 	fi
 	
-	[ "$verbose" == "yes" ] && echo curl -k -L --request PROPFIND --header \"Depth: infinity\" $user_pass \"${base}/${encoded_path}\"
-	curl -k -L --request PROPFIND --header "Depth: infinity" $user_pass "${base}/${encoded_path}" 2>/dev/null | \
+	[ "$verbose" == "yes" ] && echo curl -k -L --request PROPFIND --header \"Depth: infinity\" \
+	$user_pass $cert_key \"${base}/${encoded_path}\"
+	curl -k -L --request PROPFIND --header "Depth: infinity" $user_pass $cert_key \
+	"${base}/${encoded_path}" 2>/dev/null | \
 	xmllint --format - 2>/dev/null | grep href | sed -r 's|^ *||' | \
 	sed -r 's|<d:href>(.*)</d:href>|\1|' | sed -r "s|^/$exclude/||" | \
 	grep -v '^\./$' | grep -v '^$' | \
@@ -152,7 +170,8 @@ function davexists(){
 	local path=`echo $1 | sed -r 's|^(https*://*[^/]*)/(.*)$|\2|'`
 	local encoded_path=`urlencode "$path"`
 	encoded_path=`echo $encoded_path | sed 's|/$||g'`
-	var=`curl -k -L --header "Depth: 1" --request PROPFIND $user_pass "${base}/${encoded_path}" 2>/dev/null | \
+	var=`curl -k -L --header "Depth: 1" --request PROPFIND $user_pass $cert_key \
+	"${base}/${encoded_path}" 2>/dev/null | \
 	xmllint --format - 2>/dev/null | grep href | sed -r 's|^ *||' | \
 	sed -r 's|<d:href>(.*)</d:href>|\1|' | grep "^/$encoded_path/*$"`
 	if [ -z $var ]; then
@@ -167,7 +186,8 @@ function davisdir(){
 	local path=`echo $1 | sed -r 's|^(https*://*[^/]*)/(.*)$|\2|'`
 	local encoded_path=`urlencode "$path"`
 	encoded_path=`echo $encoded_path | sed 's|/$||g'`
-	var=`curl -k -L --header "Depth: 1" --request PROPFIND $user_pass "${base}/${encoded_path}/" 2>/dev/null | \
+	var=`curl -k -L --header "Depth: 1" --request PROPFIND $user_pass $cert_key\
+	"${base}/${encoded_path}/" 2>/dev/null | \
 	xmllint --format - 2>/dev/null | grep href | sed -r 's|^ *||' | \
 	sed -r 's|<d:href>(.*)</d:href>|\1|' | grep "^/$encoded_path/$"`
 	if [ -z $var ]; then
@@ -185,7 +205,7 @@ function davmkdir(){
 	local encoded_path=`urlencode "$path"`
 	encoded_path=`echo $encoded_path | sed 's|/$||g'`
 	
-	curl -k -L $user_pass --request MKCOL "${base}/${encoded_path}/"
+	curl -k -L $user_pass $cert_key --request MKCOL "${base}/${encoded_path}/"
 	return $?
 }
 
@@ -200,7 +220,7 @@ function davmove(){
 	local encoded_path1=`urlencode "$path1"`
 	encoded_path1=`echo $encoded_path1 | sed 's|/$||g'`
 	
-	curl -k -L $user_pass --request MOVE --header "Destination: ${base1}/${encoded_path1}" \
+	curl -k -L $user_pass $cert_key --request MOVE --header "Destination: ${base1}/${encoded_path1}" \
 	"${base0}/${encoded_path0}"
 	return $?
 }
@@ -232,7 +252,7 @@ function davpull(){
 	# Create output dir if missing
 	ls "$out_dir" >& /dev/null || ( echo mkdir "$out_dir" && mkdir "$out_dir" ) || exit $?
 	
-	curl -k -L --header "Depth: 1" --request PROPFIND $user_pass "${base}/${encoded_path}" 2>/dev/null | \
+	curl -k -L --header "Depth: 1" --request PROPFIND $user_pass $cert_key "${base}/${encoded_path}" 2>/dev/null | \
 	xmllint --format - 2>/dev/null | grep href | sed -r 's|^ *||' | \
 	sed -r 's|<d:href>(.*)</d:href>|\1|' | sed -r "s|^/$path/$base_dir/||" | sed -r "s|^/$encoded_path/$base_dir/||" | \
 	grep -Ev '^\./$' | grep -Ev '^$' |
@@ -256,14 +276,14 @@ function davpull(){
 				src="${base}/${encoded_path}/${name}"
 				dest="${out_dir}/${decoded_name}"
 			fi
-			[ "$verbose" == "yes" ] && echo curl --progress-bar -k -L $user_pass \"${src}\" \> \"${dest}\"
+			[ "$verbose" == "yes" ] && echo curl --progress-bar -k -L $user_pass $cert_key \"${src}\" \> \"${dest}\"
 			if ( ls "${dest}" >& /dev/null && [ "$force" != "yes" ] ); then
 				echo " ... exists" >&2
 				continue
 			elif [ $running_curls -gt $MAX_RUNNING_TRANSFERS ]; then
-				( curl --progress-bar -k -L $user_pass "${src}" > "${dest}" 2>/dev/null && echo " done" )
+				( curl --progress-bar -k -L $user_pass $cert_key "${src}" > "${dest}" 2>/dev/null && echo " done" )
 			else
-				( curl --progress-bar -k -L $user_pass "${src}" > "${dest}" 2>/dev/null && echo " done" ) &
+				( curl --progress-bar -k -L $user_pass $cert_key "${src}" > "${dest}" 2>/dev/null && echo " done" ) &
 			fi
 		fi
 	done
@@ -312,15 +332,15 @@ function davpush(){
 				src="${in_dir}/${name}"
 				dest="${base}/${encoded_path}/${encoded_base_dir}/${encoded_name}"
 			fi
-			[ "$verbose" == "yes" ] && echo curl --progress-bar --request PUT -k -L $user_pass --upload-file \"${src}\" \"${dest}\"
+			[ "$verbose" == "yes" ] && echo curl --progress-bar --request PUT -k -L $user_pass $cert_key --upload-file \"${src}\" \"${dest}\"
 			if ( davexists "${dest}" >& /dev/null && [ "$force" != "yes" ] ); then
 				echo " --> exists" >&2
 				continue
 			elif [ $running_curls -gt $MAX_RUNNING_TRANSFERS ]; then
-				( curl --progress-bar --request PUT -k -L $user_pass --upload-file \
+				( curl --progress-bar --request PUT -k -L $user_pass $cert_key --upload-file \
 				"${src}" "${dest}" 2>/dev/null && echo " done" )
 			else
-				( curl --progress-bar --request PUT -k -L $user_pass --upload-file \
+				( curl --progress-bar --request PUT -k -L $user_pass $cert_key --upload-file \
 				"${src}" "${dest}" 2>/dev/null && echo " done" ) &
 			fi
 		fi
