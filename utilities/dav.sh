@@ -202,10 +202,7 @@ function davmkdir(){
 	local base=`echo $1 | sed -r 's|^(https*://*[^/]*)/(.*)$|\1|'`
 	local path=`echo $1 | sed -r 's|^(https*://*[^/]*)/(.*)$|\2|'`
 	
-	local encoded_path=`urlencode "$path"`
-	encoded_path=`echo $encoded_path | sed 's|/$||g'`
-	
-	curl -k -L $user_pass $cert_key --request MKCOL "${base}/${encoded_path}/"
+	curl -k -L $user_pass $cert_key --request MKCOL "${base}/${path}/"
 	return $?
 }
 
@@ -291,7 +288,8 @@ function davpull(){
 
 function davpush(){
 	local  in_dir="$1"
-	
+	in_dir=`urldecode "$in_dir"`
+
 	if [ -d "$in_dir" ]; then
 		oneoff="no"
 		in_dir=`echo $in_dir | sed -r 's|/$||g'`
@@ -306,6 +304,7 @@ function davpush(){
 
 	local base=`echo $2 | sed -r 's|^(https*://*[^/]*)/(.*)$|\1|'`
 	local path=`echo $2 | sed -r 's|^(https*://*[^/]*)/(.*)$|\2|'`
+	path=`urldecode "$path"`
 	path=`echo $path | sed 's|/$||g'`
 	local encoded_path=`urlencode "$path"`
 
