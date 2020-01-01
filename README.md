@@ -13,6 +13,8 @@ Core apps:
 - [user_group_admin](https://github.com/deic-dk/user_group_admin)
 - [files_accounting](https://github.com/deic-dk/files_accounting)
 - [user_notification](https://github.com/deic-dk/user_notification)
+- [menu_fonticons](https://github.com/deic-dk/menu_fonticons)
+- [internal_bookmarks](https://github.com/deic-dk/internal_bookmarks)
 
 Theme:
 
@@ -21,9 +23,3 @@ Theme:
 If you want to go ahead and create a similar service, you need to install all of these apps together
 and modify the theme to match your organization look and feel and other requirements.
 
-## Compute service
-
-- built on hardware and middleware from [origo.io](https://origo.io)
-- integrated with the data service via a common permission system allowing seamless data flow between a user's VMs and the data service
-- provides apps that encapsulate fully contextualized compute clusters, ready to run on a given research problem
-- provides an app store for such apps
