@@ -20,6 +20,18 @@ Theme:
 
 - [deic_oc7_theme](https://github.com/deic-dk/deic_oc7_theme)
 
-If you want to go ahead and create a similar service, you need to install all of these apps together
+If you want to go ahead and create a similar service, you need to install all of these apps
 and modify the theme to match your organization look and feel and other requirements.
+You're welcome to get in touch.
+
+## Compute service
+
+- built on Kubernetes
+- user frontend in the form of an ownCloud app
+- users can choose from a library of predefined manifests - including manifests for running Jupyter
+- users can add manifests/images to this library
+
+App:
+
+- [user_pods](https://github.com/deic-dk/user_pods)
 
