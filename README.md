@@ -31,7 +31,10 @@ You're welcome to get in touch.
 - users can choose from a library of predefined manifests - including manifests for running Jupyter
 - users can add manifests/images to this library
 
-App:
+Repositories:
 
 - [user_pods](https://github.com/deic-dk/user_pods)
-
+- [pod_manifests](https://github.com/deic-dk/pod_manifests)
+- [sciencedata_images](https://github.com/deic-dk/sciencedata_images)
+- [jupyter_sciencedata](https://github.com/deic-dk/jupyter_sciencedata)
+- [sciencedata_kubernetes](https://github.com/deic-dk/sciencedata_kubernetes)
