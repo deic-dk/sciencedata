@@ -1,6 +1,6 @@
 ## Data service
 
-- built on ownCloud-7 with backporting of Nextcloud features
+- built on ownCloud with backporting of Nextcloud features
 - using apps and a highly customized theme, i.e. not touching the ownCloud core
 - the core apps are interdependent, and should be installed all together
 - moreover, they should be accompanied by the theme
