@@ -5,7 +5,8 @@ $user = $_GET['user'];
 $user_server_url = $_GET['user_server_url'];
 $dir = $_GET['dir'];
 $filename = $_GET['filename'];
-$basename = basename($filename);
+$basename = basename($filename, ".pdf");
+$basename = basename($basename, ".signed");
 $output = [];
 $ret = "";
 if(empty($user)){
@@ -41,7 +42,16 @@ switch($action){
 			echo json_encode(array('data' => array('message'=>'Problem getting PDF. '.serialize($output)), 'status'=>'error'));
 			break;
 		}
-		$reqStr = "java -jar /var/lib/caddy/open-pdf-sign.jar --page -1 --image /var/lib/caddy/sciencedata_signature.png --hint 'Check the validity of this signature at sciencedata.dk' --input $prefix/$filename --output $prefix/$basename.signed.pdf --certificate $prefix/$user.crt --key $prefix/$user.key";
+		// Check if already signed by user
+		$reqStr = "bash -c \"mysubject=`openssl x509 -in $prefix/*.crt -noout -subject | sed -E 's|^subject=||' | tr -s ',' '\n' | sort | tr -s '\n' ',' | sed s/,$//g | sed 's| ||g'`; pdfsubject=`pdfsig $prefix/*.pdf | grep 'Signer full Distinguished Name' | awk -F: '{print \$NF}'  | tr -s ',' '\n' | sort | tr -s '\n' ',' | sed s/,$//g | sed 's| ||g'`; echo \"\$mysubject\" == \"\$pdfsubject\"; [ \"\$mysubject\" != \"\" -a \"\$mysubject\" = \"\$pdfsubject\" ]\"";
+		exec($reqStr, $output, $ret);
+		if($ret==0){
+			header($_SERVER['SERVER_PROTOCOL'] . " 400 Bad Request", true, 400);
+			echo json_encode(array('data' => array('message'=>'You have already signed this document. '.serialize($output)), 'status'=>'error'));
+			break;
+		}
+		// Sign
+		$reqStr = "cd $prefix && java -jar /var/lib/caddy/open-pdf-sign.jar --page -1 --image /var/lib/caddy/sciencedata_signature.png --hint 'Check the validity of this signature at sciencedata.dk' --input $filename --output $basename.signed.pdf --certificate $user.crt --key $user.key";
 		exec($reqStr, $output, $ret);
 		$size = filesize("$prefix/$basename.signed.pdf");
 		if($ret==0 && $size>0){
@@ -67,7 +77,7 @@ switch($action){
 			echo json_encode(array('data' => array('message'=>'Problem getting PDF. '.serialize($output)), 'status'=>'error'));
 			break;
 		}
-		$reqStr = "pdfsig $prefix/$filename";
+		$reqStr = "cd $prefix && pdfsig $filename";
 		exec($reqStr, $output, $ret);
 		if(empty($output)){
 			header($_SERVER['SERVER_PROTOCOL'] . " 500 Internal Server Error", true, 500);
@@ -75,7 +85,7 @@ switch($action){
 		}
 		else{
 			echo json_encode(array('data' => array('retval'=>$ret, 'message'=>'Got signing info',
-				'info'=>implode("\n", str_replace('.'.$prefix, '', $output))), 'status'=>'success'));
+					'info'=>implode("\n", $output)), 'status'=>'success'));
 		}
 		break;
 	default:
@@ -83,9 +93,12 @@ switch($action){
 }
 
 // Clean up
-/*foreach(glob("$prefix/*") as $f) {
+foreach(glob("/var/www/$prefix/*") as $f) {
 	unlink($f);
-}*/
-unlink($prefix);
+}
+rmdir("/var/www/$prefix");
+//$reqStr = "rm -rf /var/www/$prefix";
+//exec($reqStr, $output, $ret);
+
 
 
