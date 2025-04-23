@@ -10,9 +10,19 @@ LABEL vendor="sciencedata.dk"
 LABEL version="1.0"
 LABEL description="Ubuntu noble with X.509 signing web service for deployment on sciencedata.dk"
 
+ENV DEBIAN_FRONTEND="noninteractive"
+ENV LANG C.UTF-8
+
+RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+RUN echo "LANG=en_US.UTF-8" > /etc/locale.conf
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+RUN apt update && apt install -y locales && \
+    locale-gen
+
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get -y install ca-certificates
 
-RUN apt update && apt install -y gpg gpgv1 curl apt-transport-https
+RUN apt install -y gpg gpgv1 curl apt-transport-https
 
 # Add cyberduck, get key manually due to apt-key deprecation
 RUN echo "deb [signed-by=/usr/local/share/keyrings/cyberduck.gpg] https://s3.amazonaws.com/repo.deb.cyberduck.io stable main" | tee -a /etc/apt/sources.list.d/cyberduck.list \
