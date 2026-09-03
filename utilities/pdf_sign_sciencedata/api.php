@@ -58,13 +58,13 @@ switch($action){
 		}
 		// Check if already signed by others
 		$stamp = "--page -1 --image /var/lib/caddy/sciencedata_signature.png --hint 'Check the validity of this signature at sciencedata.dk'";
-		$reqStr = "bash -c \"[[ `pdfsig $prefix/*.pdf | grep -E 'Signature #' | wc -l` > 0 ]]\"";
-		exec($reqStr, $output, $ret);
+		$reqStr = "bash -c \"signatures=`pdfsig $prefix/*.pdf | grep -E 'Signature #' | wc -l`; echo -n \$signatures; [[ \$signatures > 0 ]]\"";
+		exec($reqStr, $n, $ret);
 		if($ret==0){
-			$stamp = "";
+			$stamp .= "--top $n --baseline-lta";
 		}
 		// Sign
-		$reqStr = "cd \"$prefix\" && java -jar /var/lib/caddy/open-pdf-sign.jar $stamp --input \"$filename\" --output \"$basename.signed.pdf\" --certificate $user.crt --key $user.key";
+		$reqStr = "cd \"$prefix\" && java -jar /var/lib/caddy/open-pdf-sign.jar $stamp --input \"$filename\" --output \"$basename.signed.pdf\" --certification not-certified --certificate $user.crt --key $user.key";
 		exec($reqStr, $output, $ret);
 		$size = filesize("$prefix/$basename.signed.pdf");
 		if($ret==0 && $size>0){
