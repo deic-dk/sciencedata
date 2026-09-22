@@ -99,10 +99,16 @@ switch($action){
 		// and placing additional stamps risks DSS's annotation-overlap refusal.
 		// The stamp's hint says so explicitly.
 		$stamp = "";
+		$hint = "";
+		if(!empty($ts)&&!empty($tsaurl)){
+			$stamp .= " --label-timestamp 'Signed at' --timestamp --tsa ".$tsaurl;
+			$hint .= "Signed at sciencedata.dk and timestamped by its timestamp authority. ";
+		}
+		$hint .= "This document may carry more than one signature; only the first is shown here. Check the validity of all signatures at sciencedata.dk";
 		if($nSigs == 0){
 			$stamp = "--page -1 --left 1 --top 1 --width 10"
-					." --image /var/lib/caddy/sciencedata_signature.png"
-							." --hint 'This document may carry more than one signature; only the first is shown here. Check the validity of all signatures at sciencedata.dk'";
+				." --image /var/lib/caddy/sciencedata_signature.png"
+				." --hint '".$hint."'";
 		}
 		
 		// --certification not-certified = APPROVAL signature, so the document
@@ -111,10 +117,9 @@ switch($action){
 		// For full PAdES-LTV add: --baseline-lta --timestamp --tsa <rfc3161-url>
 		$javaCmd = function($stampArgs) use ($prefix, $filename, $basename, $user, $ts, $tsaurl) {
 			return "cd \"$prefix\" && java -jar /var/lib/caddy/open-pdf-sign.jar $stampArgs"
-			." --certification not-certified"
-					." --input \"$filename\" --output \"out_$basename.signed.pdf\""
-					.(!empty($ts)&&!empty($tsaurl)?" --timestamp --tsa ".$tsaurl:"")
-					." --certificate \"$user.crt\" --key \"$user.key\" 2>&1";
+				." --certification not-certified"
+				." --input \"$filename\" --output \"out_$basename.signed.pdf\""
+				." --certificate \"$user.crt\" --key \"$user.key\" 2>&1";
 		};
 		$output = [];
 		exec($javaCmd($stamp), $output, $ret);
