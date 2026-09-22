@@ -7,6 +7,7 @@ putenv('LC_ALL='.$locale);
 $action = $_GET['action'];
 $user = $_GET['user'];
 $user_server_url = $_GET['user_server_url'];
+$ts = !empty($_GET['ts']);
 $dir = $_GET['dir'];
 $dir = trim($dir, "/");
 $filename = $_GET['filename'];
@@ -110,6 +111,7 @@ switch($action){
 			return "cd \"$prefix\" && java -jar /var/lib/caddy/open-pdf-sign.jar $stampArgs"
 			." --certification not-certified"
 					." --input \"$filename\" --output \"out_$basename.signed.pdf\""
+					.($ts?" --baseline-lt --timestamp --tsa":"")
 					." --certificate \"$user.crt\" --key \"$user.key\" 2>&1";
 		};
 		$output = [];
