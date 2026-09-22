@@ -107,7 +107,7 @@ switch($action){
 		// can be signed by several people (the default certifies the document,
 		// which forbids any further signature).
 		// For full PAdES-LTV add: --baseline-lta --timestamp --tsa <rfc3161-url>
-		$javaCmd = function($stampArgs) use ($prefix, $filename, $basename, $user) {
+		$javaCmd = function($stampArgs) use ($prefix, $filename, $basename, $user, $ts) {
 			return "cd \"$prefix\" && java -jar /var/lib/caddy/open-pdf-sign.jar $stampArgs"
 			." --certification not-certified"
 					." --input \"$filename\" --output \"out_$basename.signed.pdf\""
