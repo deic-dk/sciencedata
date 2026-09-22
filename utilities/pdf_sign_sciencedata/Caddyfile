@@ -20,7 +20,9 @@ file_server
 
 # Or serve a PHP site through php-fpm:
 # php_fastcgi localhost:9000
-php_fastcgi unix//run/php/php-fpm.sock
+php_fastcgi unix//run/php/php-fpm.sock {
+  env TSA_URL {$TSA_URL}
+}
 
 # Refer to the Caddy docs for more information:
 # https://caddyserver.com/docs/caddyfile

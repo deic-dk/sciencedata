@@ -8,7 +8,8 @@ $action = $_GET['action'];
 $user = $_GET['user'];
 $user_server_url = $_GET['user_server_url'];
 $tsa_url = getenv('TSA_URL');
-$ts = !empty($tsa_url)?escapeshellarg($tsa_url):"";
+$tsaurl = !empty($tsa_url)?escapeshellarg($tsa_url):"";
+$ts = !empty($_GET['ts']);
 $dir = $_GET['dir'];
 $dir = trim($dir, "/");
 $filename = $_GET['filename'];
@@ -108,11 +109,11 @@ switch($action){
 		// can be signed by several people (the default certifies the document,
 		// which forbids any further signature).
 		// For full PAdES-LTV add: --baseline-lta --timestamp --tsa <rfc3161-url>
-		$javaCmd = function($stampArgs) use ($prefix, $filename, $basename, $user, $ts) {
+		$javaCmd = function($stampArgs) use ($prefix, $filename, $basename, $user, $ts, $tsaurl) {
 			return "cd \"$prefix\" && java -jar /var/lib/caddy/open-pdf-sign.jar $stampArgs"
 			." --certification not-certified"
 					." --input \"$filename\" --output \"out_$basename.signed.pdf\""
-					.(!empty($ts)?" --baseline-lt --timestamp --tsa ".$ts:"")
+					.(!empty($ts)&&!empty($tsaurl)?" --timestamp --tsa ".$tsaurl:"")
 					." --certificate \"$user.crt\" --key \"$user.key\" 2>&1";
 		};
 		$output = [];
