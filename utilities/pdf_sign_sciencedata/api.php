@@ -88,57 +88,43 @@ switch($action){
 			break;
 		}
 
-		// ONE visible stamp per document, owned by the FIRST signature. Later
-		// signatures are added invisibly (equally valid PAdES; every reader's
-		// signature panel and our Verify action list them all). Rationale: a
-		// previous stamp can never be removed or edited (it is the earlier
-		// signature's own annotation — touching it invalidates that signature),
-		// and placing additional stamps risks DSS's annotation-overlap refusal.
-		// The stamp's hint says so explicitly.
-		$stamp = "";
-		if($nSigs == 0){
-			$stamp = "--page -1 --left 1 --top 1 --width 10"
-				." --image /var/lib/caddy/sciencedata_signature.png"
-				." --hint 'This document may carry more than one signature; only the first is shown here. Check the validity of all signatures at sciencedata.dk'";
-		}
-
-		// --certification not-certified = APPROVAL signature, so the document
-		// can be signed by several people (the default certifies the document,
-		// which forbids any further signature).
-		//
-		// TSA_URL, from the environment, turns on PAdES-LT: the signature then
-		// carries a trusted timestamp and the revocation material for its chain.
-		// Not a nicety. Without it a signature is only as good as the signer's
-		// certificate is *today*, so it stops verifying when that certificate
-		// expires (a year, by default), and every signature ever made dies with
-		// the CA if the CA ever has to be retired. With it, a verifier can ask
-		// whether the signature was valid when it was made. Empty = off, so the
-		// image is harmless until an authority exists.
-		// Two conditions, deliberately: the caller asks for it with ?ts=1, and the
-		// deployment says which authority with TSA_URL in the environment (one
-		// line in pdfsign.yaml). Without the URL the flags are NOT added, because
-		// `--tsa` takes a value — open-pdf-sign's default is an empty list — and a
-		// bare `--tsa` swallows whatever argument follows it.
+		// Timestamping: the caller asks with ?ts=<non-empty>, and the deployment
+		// names the authority with TSA_URL in the environment (pdfsign.yaml, passed
+		// to PHP by the Caddyfile's php_fastcgi env line). --timestamp alone gives
+		// PAdES Baseline-T. NOT --baseline-lt: that profile embeds revocation data
+		// and DSS refuses outright, because our CA publishes neither CRL nor OCSP.
 		$ts  = !empty($_GET['ts']);
 		$tsa = getenv('TSA_URL');
-		// VERIFIED WORKING 2026-09-22: the signature carries id-smime-aa-timeStampToken
-		// and the authority's journal gains a line per signature.
-		// --timestamp alone, NOT --baseline-lt. The LT profile embeds validation
-		// material, so DSS demands a CRL or an OCSP response for every certificate
-		// in the chain, including the authority's, and refuses outright when there
-		// is none: "Revocation data is missing for one or more certificate(s)".
-		// This CA publishes neither, by design. Baseline-T — signature plus a
-		// signature timestamp — needs no revocation data and gives what we are
-		// after: proof the signature existed at a time, so it survives the signer's
-		// certificate expiring and survives the CA being retired.
 		$tsaArgs = ($ts && !empty($tsa))
 			? " --timestamp --tsa " . escapeshellarg($tsa)
 			: "";
 		if ($ts && empty($tsa)) {
-			error_log("pdf_sign: ?ts=1 but TSA_URL is not set; signing without a timestamp");
+			error_log("pdf_sign: ts requested but TSA_URL is not set; signing without a timestamp");
 		}
-		// $tsaArgs must be in `use`, or it is simply undefined inside the closure
-		// and the flags silently never appear.
+		// The visible block's time row is the signing machine's clock, not the
+		// authority's, so it must not be called "Timestamp" when a real timestamp
+		// exists. The hint says there is one and where to check it; the attested
+		// time itself cannot go on the stamp, which is fixed before the token exists.
+		$labelArgs = $tsaArgs !== "" ? " --label-timestamp 'Signed at'" : "";
+		$hint = ($tsaArgs !== "" ? "Signed at sciencedata.dk and timestamped by its timestamp authority. " : "")
+			. "This document may carry more than one signature; only the first is shown here. Check the validity of all signatures at sciencedata.dk";
+
+		// ONE visible stamp per document, owned by the FIRST signature. Later
+		// signatures are added invisibly (equally valid PAdES; every reader's
+		// signature panel and our Verify action list them all). A previous stamp
+		// can never be removed or edited (it is the earlier signature's own
+		// annotation — touching it invalidates that signature).
+		$stamp = "";
+		if($nSigs == 0){
+			$stamp = "--page -1 --left 1 --top 1 --width 10" . $labelArgs
+				." --image /var/lib/caddy/sciencedata_signature.png"
+				." --hint '".$hint."'";
+		}
+
+		// --certification not-certified = APPROVAL signature, so the document can
+		// be signed by several people. $tsaArgs lives in the closure, not in
+		// $stamp, so every path keeps the timestamp: later (invisible) signatures
+		// and the overlap fallback below that signs with no stamp at all.
 		$javaCmd = function($stampArgs) use ($prefix, $filename, $basename, $user, $tsaArgs) {
 			return "cd \"$prefix\" && java -jar /var/lib/caddy/open-pdf-sign.jar $stampArgs"
 				." --certification not-certified" . $tsaArgs
